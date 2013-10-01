@@ -4,7 +4,7 @@
   "description": "Cache compiled npm packages",
   "main": "./lib/stash.js",
   "bin": {
-    "npm-stash": "./bin/stash-cli.js"
+    "stash": "./bin/stash-cli.js"
   },
   "dependencies": {
     "nopt": "~2.1.2",
