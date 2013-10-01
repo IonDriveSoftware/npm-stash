@@ -1,0 +1,32 @@
+{
+  "name": "npm-stash",
+  "version": "0.0.1",
+  "description": "Cache compiled npm packages",
+  "main": "./lib/stash.js",
+  "bin": {
+    "npm-stash": "./bin/stash-cli.js"
+  },
+  "dependencies": {
+    "nopt": "~2.1.2",
+    "osenv": "~0.0.3",
+    "npm": "~1.3.11",
+    "semver": "~2.1.0",
+    "mkdirp": "~0.3.5",
+    "tar": "~0.1.18",
+    "fstream": "~0.1.24",
+    "rimraf": "~2.2.2",
+    "slide": "~1.1.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "npm",
+    "stash",
+    "cache",
+    "compiled"
+  ],
+  "author": "Ion Drive Software <github@iondrivesoftware.com>",
+  "license": "MIT"
+}
