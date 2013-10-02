@@ -1,27 +1,86 @@
 #!/usr/bin/env node
+var crypto = require('crypto');
+var spawn = require('child_process').spawn;
+var fs = require('fs');
 var path = require('path');
 
-var nopt = require('nopt');
-var npm = require('npm');
+var chain = require('slide').chain;
+var osenv = require('osenv');
 
-var stash = require('../lib/stash');
+var cache = path.resolve(osenv.home(), '.npm-stash');
 
-stash.config = nopt({
-  //'save': Boolean,
-  //'save-dev': Boolean,
-  //'save-optional': Boolean,
-  'dev': Boolean,
-  'production': Boolean
-});
+// Ensure .npm-stash folder exists
+if (!fs.existsSync(cache)) {
+  fs.mkdirSync(cache);
+}
 
-stash.argv = stash.config.argv.remain;
-stash.command = stash.argv.shift();
+var command = process.argv[2];
+if (command !== 'install') {
+   return log('Unknown command');
+}
 
-npm.load(stash.config, function (err) {
-  if (err) return console.log(err);
-  if (stash.command) {
-    require('../lib/' + stash.command)(stash.argv);
-  } else {
-    console.log('Usage: TODO');
-  }
+function log(dir, msg) {
+  console.log('stash - ' + (msg ? dir + ' - ' : '') + msg);
+}
+
+function generateHash(s) {
+  var h = crypto.createHash('sha256');
+  h.setEncoding('hex');
+  h.write(s);
+  h.end();
+  return h.read();
+}
+
+function npm(dir, command, callback) {
+  log(dir, 'npm ' + command);
+  var p = spawn(
+    'npm',
+    [command],
+    { stdio: ['ignore', 'pipe', process.stderr] }
+  );
+  var out = '';
+  p.stdout.on('data', function (data) {
+    out += data;
+  });
+  p.on('close', function () {
+    callback(null, out);
+  });
+}
+
+function unpack(tarPath, target, callback) {
+  log(target, 'extracting archive');
+  spawn(
+    'tar',
+    ['-xvf', tarPath, '-C', target],
+    { stdio: 'ignore' }
+  ).on('close', callback);
+}
+
+function pack(source, tarPath, callback) {
+  log(source, 'creating archive');
+  spawn(
+    'tar',
+    ['-cvf', tarPath, '-C', source, 'node_modules'],
+    { stdio: 'ignore' }
+  ).on('close', callback);
+}
+
+npm(process.cwd(), 'prefix', function (err, prefix) {
+  prefix = prefix.replace('\n', '');
+  npm = npm.bind(null, prefix);
+
+  var hash = generateHash(prefix);
+  var tarPath = path.join(cache, hash + '.tar.gz');
+  var exists = fs.existsSync(tarPath);
+  chain([
+    exists && [unpack, tarPath, prefix],
+    exists && [npm, 'prune'],
+    [npm, 'install'],
+    [pack, prefix, tarPath]
+  ], function (err, a, b) {
+    if (err) {
+      return log(prefix, 'error:', err);
+    }
+    log(prefix, 'done');
+  });
 });

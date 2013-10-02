@@ -21,6 +21,6 @@ npm install -g npm-stash
 ## Example
 
 ```js
-stash install mongodb // fetch and compile as usual from npm (the result is stored in ~/.npm-stash)
-stash install mongodb // grab and install compiled result from ~/.npm-stash
+stash install // fetch and compile as usual from npm (the result is stored in ~/.npm-stash)
+stash install // grab and install compiled result from ~/.npm-stash
 ```
