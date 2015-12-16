@@ -69,7 +69,8 @@ npm(process.cwd(), 'prefix', function (err, prefix) {
   prefix = prefix.replace('\n', '');
   npm = npm.bind(null, prefix);
 
-  var hash = generateHash(prefix);
+  var projectName = require(prefix + '/package.json').name;
+  var hash = generateHash(projectName);
   var tarPath = path.join(cache, hash + '.tar.gz');
   var exists = fs.existsSync(tarPath);
   chain([
@@ -81,6 +82,6 @@ npm(process.cwd(), 'prefix', function (err, prefix) {
     if (err) {
       return log(prefix, 'error:', err);
     }
-    log(prefix, 'done');
+    log(prefix, 'done for hashKey: ' + projectName);
   });
 });
