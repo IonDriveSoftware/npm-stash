@@ -20,7 +20,7 @@ if (command !== 'install') {
 }
 
 function log(dir, msg) {
-  console.log('stash - ' + (msg ? dir + ' - ' : '') + msg);
+  console.log('stash - ' + (msg ? dir + ' - ' + msg : dir));
 }
 
 function generateHash(s) {
@@ -32,10 +32,11 @@ function generateHash(s) {
 }
 
 function npm(dir, command, callback) {
-  log(dir, 'npm ' + command);
+  log(dir, 'npm ' + command.join(" "));
+
   var p = spawn(
     'npm',
-    [command],
+    command,
     { stdio: ['ignore', 'pipe', process.stderr] }
   );
   var out = '';
@@ -65,22 +66,24 @@ function pack(source, tarPath, callback) {
   ).on('close', callback);
 }
 
-npm(process.cwd(), 'prefix', function (err, prefix) {
+npm(process.cwd(), ['prefix'], function (err, prefix) {
   prefix = prefix.replace('\n', '');
-  npm = npm.bind(null, prefix);
+  npm = npm.bind(null, [prefix]);
 
-  var hash = generateHash(prefix);
+  var projectName = require(prefix + '/package.json').name;
+  var hash = generateHash(projectName);
   var tarPath = path.join(cache, hash + '.tar.gz');
   var exists = fs.existsSync(tarPath);
+  var npmInstallArgs = process.argv.slice(3);
   chain([
     exists && [unpack, tarPath, prefix],
-    exists && [npm, 'prune'],
-    [npm, 'install'],
+    exists && [npm, ['prune']],
+    [npm, ['install'].concat(npmInstallArgs)],
     [pack, prefix, tarPath]
   ], function (err, a, b) {
     if (err) {
       return log(prefix, 'error:', err);
     }
-    log(prefix, 'done');
+    log(prefix, 'done for hashKey: ' + projectName);
   });
 });
